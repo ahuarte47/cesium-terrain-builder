@@ -155,7 +155,9 @@ ctb::MeshTiler::createMesh(const TileCoordinate &coord) const {
   ctb::chunk::heightfield heightfield(rasterHeights, TILE_SIZE);
   heightfield.applyGeometricError(maximumGeometricError, coord.zoom <= 6);
   //
-  WrapperMesh mesh(mGrid.tileBounds(coord), terrainTile->getMesh(), TILE_SIZE, TILE_SIZE);
+  ctb::CRSBounds mGridBounds = mGrid.tileBounds(coord);
+  Mesh &tileMesh = terrainTile->getMesh();
+  WrapperMesh mesh(mGridBounds, tileMesh, TILE_SIZE, TILE_SIZE);
   heightfield.generateMesh(mesh, 0);
   heightfield.clear();
 
