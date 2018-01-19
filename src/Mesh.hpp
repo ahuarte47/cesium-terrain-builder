@@ -25,7 +25,7 @@
 
 #include <cstdint>
 #include <vector>
-
+#include <cstring>
 #include "types.hpp"
 #include "CTBException.hpp"
 
