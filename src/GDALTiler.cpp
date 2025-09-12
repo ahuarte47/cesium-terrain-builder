@@ -72,7 +72,7 @@ GDALTiler::GDALTiler(GDALDataset *poDataset, const Grid &grid, const TilerOption
 
     if (!srcSRS.IsSame(&gridSRS)) { // it doesn't match
       // Check the srs is valid
-      switch(srcSRS.Validate()) {
+        switch(srcSRS.Validate()) {
       case OGRERR_NONE:
         break;
       case OGRERR_CORRUPT_DATA:
@@ -86,8 +86,11 @@ GDALTiler::GDALTiler(GDALDataset *poDataset, const Grid &grid, const TilerOption
       }
 
       // We need to transform the bounds to the grid SRS
-      double x[4] = { bounds.getMinX(), bounds.getMaxX(), bounds.getMaxX(), bounds.getMinX() };
-      double y[4] = { bounds.getMinY(), bounds.getMinY(), bounds.getMaxY(), bounds.getMaxY() };
+      // Note: Source SRS has axis order (Latitude, Longitude), but we need (Longitude, Latitude)
+      // So we swap the coordinate arrays
+      double x[4] = { bounds.getMinY(), bounds.getMinY(), bounds.getMaxY(), bounds.getMaxY() }; // latitude
+      double y[4] = { bounds.getMinX(), bounds.getMaxX(), bounds.getMaxX(), bounds.getMinX() }; // longitude
+
 
       OGRCoordinateTransformation *transformer = OGRCreateCoordinateTransformation(&srcSRS, &gridSRS);
       if (transformer == NULL) {
@@ -99,10 +102,11 @@ GDALTiler::GDALTiler(GDALDataset *poDataset, const Grid &grid, const TilerOption
       delete transformer;
 
       // Get the min and max values of the transformed coordinates
-      double minX = std::min(std::min(x[0], x[1]), std::min(x[2], x[3])),
-        maxX = std::max(std::max(x[0], x[1]), std::max(x[2], x[3])),
-        minY = std::min(std::min(y[0], y[1]), std::min(y[2], y[3])),
-        maxY = std::max(std::max(y[0], y[1]), std::max(y[2], y[3]));
+      // Note: After transformation, x contains latitude (Y) and y contains longitude (X)
+      double minX = std::min(std::min(y[0], y[1]), std::min(y[2], y[3])), // longitude
+        maxX = std::max(std::max(y[0], y[1]), std::max(y[2], y[3])), // longitude
+        minY = std::min(std::min(x[0], x[1]), std::min(x[2], x[3])), // latitude
+        maxY = std::max(std::max(x[0], x[1]), std::max(x[2], x[3])); // latitude
 
       mBounds = CRSBounds(minX, minY, maxX, maxY); // set the bounds
       mResolution = mBounds.getWidth() / poDataset->GetRasterXSize(); // set the resolution
