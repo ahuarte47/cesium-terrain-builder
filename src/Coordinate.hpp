@@ -50,14 +50,14 @@ public:
   {}
 
   /// Overload the equality operator
-  virtual bool
+  bool
   operator==(const Coordinate &other) const {
     return x == other.x
       && y == other.y;
   }
 
   /// Overload the assignment operator
-  virtual void
+  void
   operator=(const Coordinate &other) {
     x = other.x;
     y = other.y;

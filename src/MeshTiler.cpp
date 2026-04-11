@@ -46,8 +46,8 @@ private:
 
 public:
   WrapperMesh(CRSBounds &bounds, Mesh &mesh, i_tile tileSizeX, i_tile tileSizeY):
-    mMesh(mesh),
     mBounds(bounds),
+    mMesh(mesh),
     mTriOddOrder(false),
     mTriIndex(0) {
     mCellSizeX = (bounds.getMaxX() - bounds.getMinX()) / (double)(tileSizeX - 1);

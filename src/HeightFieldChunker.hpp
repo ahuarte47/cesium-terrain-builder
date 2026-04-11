@@ -241,8 +241,6 @@ public:
 
     int size = (1 << m_log_size);
     int half_size = size >> 1;
-    int cx = x0 + half_size;
-    int cy = y0 + half_size;
 
     // Start making the mesh.
     mesh.clear();

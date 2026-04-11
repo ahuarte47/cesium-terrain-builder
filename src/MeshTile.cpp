@@ -135,10 +135,10 @@ template <typename T> int writeEdgeIndices(CTBOutputStream &ostream, const Mesh 
     }
   }
 
-  int edgeCount = indices.size();
+  int edgeCount = (int)indices.size();
   ostream.write(&edgeCount, sizeof(int));
 
-  for (size_t i = 0; i < edgeCount; i++) {
+  for (size_t i = 0; i < (size_t)edgeCount; i++) {
     T indice = (T)indices[i];
     ostream.write(&indice, sizeof(T));
   }
@@ -208,7 +208,7 @@ MeshTile::MeshTile(const TileCoordinate &coord):
 void 
 MeshTile::writeFile(const char *fileName, bool writeVertexNormals) const {
   CTBZFileOutputStream ostream(fileName);
-  writeFile(ostream);
+  writeFile(ostream, writeVertexNormals);
 }
 
 /**
@@ -360,7 +360,7 @@ MeshTile::writeFile(CTBOutputStream &ostream, bool writeVertexNormals) const {
       normalsPerVertex[indexV1] = normalsPerVertex[indexV1] + weightedNormal;
       normalsPerVertex[indexV2] = normalsPerVertex[indexV2] + weightedNormal;
     }
-    for (size_t i = 0; i < vertexCount; i++) {
+    for (size_t i = 0; i < (size_t)vertexCount; i++) {
       Coordinate<unsigned char> xy = octEncode(normalsPerVertex[i].normalize());
       ostream.write(&xy.x, sizeof(unsigned char));
       ostream.write(&xy.y, sizeof(unsigned char));

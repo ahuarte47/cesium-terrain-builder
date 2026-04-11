@@ -134,7 +134,6 @@ ctb::CTBFileTileSerializer::serializeTile(const ctb::GDALTile *tile, GDALDriver 
  */
 bool
 ctb::CTBFileTileSerializer::serializeTile(const ctb::TerrainTile *tile) {
-  const TileCoordinate *coordinate = tile;
   const string filename = getTileFilename(tile, moutputDir, "terrain");
   const string temp_filename = concat(filename, ".tmp");
 

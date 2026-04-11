@@ -73,6 +73,17 @@ public:
     #endif
   }
 
+  /// Copy constructor
+  Grid(const Grid &other):
+    mTileSize(other.mTileSize),
+    mExtent(other.mExtent),
+    mSRS(other.mSRS),
+    mInitialResolution(other.mInitialResolution),
+    mXOriginShift(other.mXOriginShift),
+    mYOriginShift(other.mYOriginShift),
+    mZoomFactor(other.mZoomFactor)
+  {}
+
   /// Overload the assignment operator
   Grid &
   operator=(const Grid &other) {

@@ -298,7 +298,7 @@ CPL_STDCALL termProgress(double dfComplete, const char *pszMessage, void *pProgr
 
 /// In a thread safe manner describe the file just created
 static int
-CPL_STDCALL verboseProgress(double dfComplete, const char *pszMessage, void *pProgressArg) {
+CPL_STDCALL verboseProgress(double dfComplete, const char *pszMessage, void * /*pProgressArg*/) {
   stringstream stream;
   stream << "[" << (int) (dfComplete*100) << "%] " << pszMessage << endl;
   cout << stream.str();
@@ -329,7 +329,7 @@ fileExists(const std::string& filename) {
   return VSIStatExL(filename.c_str(), &statbuf, VSI_STAT_EXISTS_FLAG) == 0;
 }
 
-static bool
+[[maybe_unused]] static bool
 fileCopy(const std::string& sourceFilename, const std::string& targetFilename) {
   FILE *fp_s = VSIFOpen(sourceFilename.c_str(), "rb");
   if (!fp_s) return false;
@@ -393,7 +393,7 @@ public:
     CRSBounds tileBounds = grid.tileBounds(*coordinate);
     i_zoom zoom = coordinate->zoom;
 
-    if ((1 + zoom) > levels.size()) {
+    if ((size_t)(1 + zoom) > levels.size()) {
       levels.resize(1 + zoom, LevelInfo());
     }
     LevelInfo &level = levels[zoom];
