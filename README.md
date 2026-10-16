@@ -234,7 +234,8 @@ compiling and running on:
   [this issue](https://github.com/geo-data/cesium-terrain-builder/issues/6)).
 
 * Windows using Visual Studio 2022 or later with GDAL 3.x from vcpkg or conda-forge (see
-  [Building on Windows](#building-on-windows)).
+  [Building on Windows](#building-on-windows)). The `build` workflow compiles
+  on Linux and Windows and checks that both produce identical tiles.
 
 * Mac OS X Mavericks using clang (see
   [this issue](https://github.com/geo-data/cesium-terrain-builder/issues/3)).

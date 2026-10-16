@@ -1,0 +1,121 @@
+# Builds the library and tools on Linux and Windows against the same GDAL
+# (conda-forge), then checks that both produce the same quantized-mesh tiles
+# from the same input. Compiling on both is not enough: the tiles must match.
+
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: conda-incubator/setup-miniconda@v4
+        with:
+          miniforge-version: latest
+          activate-environment: ctb
+          channels: conda-forge
+          conda-remove-defaults: "true"
+
+      - name: Install dependencies
+        run: conda install -y gdal zlib cmake numpy
+
+      - name: Configure
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            PREFIX="$CONDA_PREFIX/Library"
+          else
+            PREFIX="$CONDA_PREFIX"
+          fi
+          # GDAL_LIBRARY_DIR lets the GDALOpenEx check link against conda's
+          # GDAL, which is not on the default linker path.
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$PREFIX" \
+            -DGDAL_LIBRARY_DIR="$PREFIX/lib" \
+            -DCMAKE_INSTALL_PREFIX="$PWD/install"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Install
+        run: cmake --install build --config Release
+
+      - name: Make a test DEM
+        run: |
+          python - <<'EOF'
+          # Integer arithmetic only, so the input is bit-identical on every
+          # platform: sin, exp and friends may differ in the last bit.
+          import hashlib
+          import numpy as np
+          from osgeo import gdal, osr
+          gdal.UseExceptions()
+          size = 1201
+          row, column = np.mgrid[0:size, 0:size].astype(np.int64)
+          z = 600 + (row * column) // 4000
+          for centreRow, centreColumn, radius, height in ((700, 720, 260, 400),
+                                                          (300, 250, 180, 250),
+                                                          (950, 200, 140, -150)):
+              squared = (row - centreRow) ** 2 + (column - centreColumn) ** 2
+              z += height * np.maximum(radius * radius - squared, 0) // (radius * radius)
+          heights = z.astype(np.float32)
+          driver = gdal.GetDriverByName("GTiff")
+          dataset = driver.Create("dem.tif", size, size, 1, gdal.GDT_Float32)
+          step = 1.0 / (size - 1)
+          dataset.SetGeoTransform((78.0 - step / 2, step, 0.0, 13.0 + step / 2, 0.0, -step))
+          srs = osr.SpatialReference()
+          srs.ImportFromEPSG(4326)
+          dataset.SetProjection(srs.ExportToWkt())
+          dataset.GetRasterBand(1).WriteArray(heights)
+          dataset = None
+          with open("tiles-dem.sha256", "w", newline="\n") as handle:
+              handle.write(hashlib.sha256(heights.tobytes()).hexdigest() + "\n")
+          EOF
+
+      - name: Make tiles
+        run: |
+          export PATH="$PWD/install/bin:$PATH"
+          # Linux: find libctb and conda's GDAL without running ldconfig.
+          export LD_LIBRARY_PATH="$PWD/install/lib:$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
+          mkdir tiles
+          ctb-tile -f Mesh -C -s 10 -e 0 -o tiles dem.tif
+          ctb-tile -f Mesh -C -l -s 10 -e 0 -o tiles dem.tif
+          mv tiles-dem.sha256 tiles/dem.sha256
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tiles-${{ matrix.os }}
+          path: tiles
+
+  compare:
+    name: same tiles on Linux and Windows
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+
+      - name: Same input
+        run: |
+          linux=$(tr -d '\r\n' < tiles-ubuntu-24.04/dem.sha256)
+          windows=$(tr -d '\r\n' < tiles-windows-latest/dem.sha256)
+          echo "Linux DEM:   $linux"
+          echo "Windows DEM: $windows"
+          [ -n "$linux" ] && [ "$linux" = "$windows" ]
+
+      - name: Compare
+        run: python3 .github/scripts/compare_tiles.py tiles-ubuntu-24.04 tiles-windows-latest
