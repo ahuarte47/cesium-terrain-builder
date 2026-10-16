@@ -20,6 +20,8 @@
  * @author Alvaro Huarte <ahuarte47@yahoo.es>
  */
 
+#define _USE_MATH_DEFINES       // for M_PI
+
 #include <cmath>
 #include <vector>
 #include <map>
