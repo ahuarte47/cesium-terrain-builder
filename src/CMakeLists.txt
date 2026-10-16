@@ -1,7 +1,10 @@
 # Ensure we have a unified GDAL: `GDALOpenEx` is only present after
 # unification.
 include(CheckLibraryExists)
-if (${GDAL_LIBRARY_DIR})
+if(GDAL_LIBRARY_DIR)
+  # Forward slashes: a Windows path's backslashes read as escape sequences
+  # once the value is passed into check_library_exists below.
+  file(TO_CMAKE_PATH "${GDAL_LIBRARY_DIR}" GDAL_LIBRARY_DIR)
   message("Searching GDAL library in provided ${GDAL_LIBRARY_DIR}")
 endif()
 
@@ -70,4 +73,7 @@ set(HEADERS
 install(FILES ${HEADERS} DESTINATION include/ctb)
 install(FILES ctb.hpp DESTINATION include)
 
-install(TARGETS ctb DESTINATION lib)
+install(TARGETS ctb
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib)

@@ -233,6 +233,9 @@ compiling and running on:
 * Windows using Visual Studio 2010 and 2013 (see
   [this issue](https://github.com/geo-data/cesium-terrain-builder/issues/6)).
 
+* Windows using Visual Studio 2022 or later with GDAL 3.x from vcpkg or conda-forge (see
+  [Building on Windows](#building-on-windows)).
+
 * Mac OS X Mavericks using clang (see
   [this issue](https://github.com/geo-data/cesium-terrain-builder/issues/3)).
 
@@ -288,6 +291,30 @@ cmake -DGDAL_LIBRARY_DIR=/home/user/install/lib \
       -DGDAL_INCLUDE_DIR=/home/user/install/include \
       ..
 ```
+
+### Building on Windows
+
+Use Visual Studio 2022 or later (any edition, with the C++ workload) and a
+CMake that has a generator for it (3.21 or later for Visual Studio 2022). GDAL
+and zlib can come from [vcpkg](https://vcpkg.io) or from
+[conda-forge](https://conda-forge.org).
+
+With vcpkg, after `vcpkg install gdal zlib --triplet x64-windows`:
+
+```bat
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64 ^
+      -DCMAKE_TOOLCHAIN_FILE=<vcpkg-root>/scripts/buildsystems/vcpkg.cmake ^
+      -DCMAKE_INSTALL_PREFIX=<install-dir>
+cmake --build build --config Release
+cmake --install build --config Release
+```
+
+With conda-forge, in an environment with `gdal`, `zlib` and `cmake` installed,
+pass `-DCMAKE_PREFIX_PATH=%CONDA_PREFIX%\Library` instead of the toolchain file.
+
+The tools and `ctb.dll` are installed to `<install-dir>\bin`. GDAL's DLLs must
+also be on `PATH` at run time, and `GDAL_DATA` and `PROJ_DATA` must point at
+the GDAL and PROJ data directories of the same installation.
 
 ### Using Docker
 
